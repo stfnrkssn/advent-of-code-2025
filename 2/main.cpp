@@ -31,13 +31,39 @@ inline bool is_valid_id(uint64_t id) {
         temp /= 10;
     }
 
-    if (digits % 2 != 0) return true; //no even number of digits, must be valid.
+    // Try each possible pattern length
+    for (uint64_t pattern_len = 1; pattern_len <= digits / 2; ++pattern_len) {
+        if (digits % pattern_len != 0)
+            continue;
 
-    const uint64_t half = digits / 2;
-    uint64_t divisor = 1;
-    for (uint64_t i = 0; i < half; ++i) divisor *= 10;
+        uint64_t repetitions = digits / pattern_len;
+        if (repetitions < 2)
+            continue;
 
-    return (id / divisor) != (id % divisor);
+        // Divisor to extract pattern-sized chunks
+        uint64_t divisor = 1;
+        for (uint64_t i = 0; i < pattern_len; ++i)
+            divisor *= 10;
+
+        // Extract the rightmost pattern
+        const uint64_t pattern = id % divisor;
+
+        // Check if all chunks match
+        uint64_t remaining = id;
+        bool all_match = true;
+        for (uint64_t r = 0; r < repetitions; ++r) {
+            if ((remaining % divisor) != pattern) {
+                all_match = false;
+                break;
+            }
+            remaining /= divisor;
+        }
+
+        if (all_match)
+            return false;
+    }
+
+    return true;
 }
 
 inline IntRange parse_range(const char* start, size_t len) {
