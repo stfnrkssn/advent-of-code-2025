@@ -150,6 +150,71 @@ std::optional<ReadStats> read_lines(const char* path, LineParser&& parser, bool 
     return stats;
 }
 
+template<typename TokenParser>
+std::optional<ReadStats> read_delimited(const char* path, char delimiter, TokenParser&& parser, bool debug = false) {
+    ReadStats stats;
+    auto start_time = std::chrono::high_resolution_clock::now();
+
+    detail::MappedFile file;
+    if (!file.open(path)) {
+        if (debug) std::cerr << "[fast_io] Failed to open: " << path << '\n';
+        return std::nullopt;
+    }
+
+    stats.file_size = file.size;
+
+    if (file.size == 0) {
+        if (debug) std::cout << "[fast_io] Empty file\n";
+        return stats;
+    }
+
+    const char* ptr = file.data;
+    const char* end = file.data + file.size;
+    const char* token_start = ptr;
+
+    while (ptr < end) {
+        if (*ptr == delimiter || *ptr == '\n' || *ptr == '\r') {
+            size_t token_len = ptr - token_start;
+            if (token_len > 0) {
+                parser(token_start, token_len);
+                ++stats.line_count;  // reusing as token count
+            }
+
+            // Handle \r\n
+            if ((*ptr == '\r' || *ptr == '\n') && ptr + 1 < end &&
+                (ptr[1] == '\n' || ptr[1] == '\r') && ptr[0] != ptr[1]) {
+                ++ptr;
+            }
+            token_start = ptr + 1;
+        }
+        ++ptr;
+    }
+
+    // Final token without trailing delimiter/newline
+    if (token_start < end) {
+        parser(token_start, end - token_start);
+        ++stats.line_count;
+    }
+
+    auto end_time = std::chrono::high_resolution_clock::now();
+    stats.parse_time_ms = std::chrono::duration<double, std::milli>(end_time - start_time).count();
+
+    if (debug) {
+        std::cout << "[fast_io] File: " << path << '\n'
+                  << "[fast_io] Size: " << stats.file_size << " bytes\n"
+                  << "[fast_io] Tokens: " << stats.line_count << '\n'
+                  << "[fast_io] Time: " << stats.parse_time_ms << " ms\n";
+    }
+
+    return stats;
+}
+
+// Convenience wrapper for CSV
+template<typename TokenParser>
+std::optional<ReadStats> read_csv(const char* path, TokenParser&& parser, bool debug = false) {
+    return read_delimited(path, ',', std::forward<TokenParser>(parser), debug);
+}
+
 // Convenience: parse integers with optional prefix char
 inline int parse_int(const char* start, size_t len) {
     int value = 0;
