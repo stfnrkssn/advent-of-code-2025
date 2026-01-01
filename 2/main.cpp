@@ -88,7 +88,7 @@ inline IntRange parse_range(const char* start, size_t len) {
 }
 
 int main(int argc, char* argv[]) {
-    const char* path;
+    const char* path = nullptr;
 
     if (argc < 2) {
         std::cout << "Using default data file: ./data.txt" << std::endl;

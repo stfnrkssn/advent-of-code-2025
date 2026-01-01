@@ -28,7 +28,7 @@ size_t count_zeros_passed(int dial_position, int instruction) {
 
 
 int main(int argc, char* argv[]){
-    const char* path;
+    const char* path = nullptr;
 
     if (argc < 2) {
         std::cout << "Using default data file: ./data.txt" << std::endl;
