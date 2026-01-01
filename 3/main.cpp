@@ -4,7 +4,7 @@
 #include <iostream>
 
 #include "fast-io.hpp"
-//#define SAMPLE_INPUT;
+#define SAMPLE_INPUT;
 constexpr bool DEBUG_FAST_IO = true;
 
 namespace Escalator {
@@ -26,23 +26,32 @@ namespace Escalator {
         std::array<Battery, BANK_SIZE> batteries {0};
         uint8_t battery_count = 0;
     public:
-        [[nodiscard]] uint8_t get_max_joltage() const {
-            uint8_t first = 0;
-            uint8_t second = 0;
-            for (uint8_t i = 0; i < battery_count-1; i++) {
-                if (batteries[i].value > first) {
-                    first = batteries[i].value;
-                    second = 0;
-                    for (uint8_t y = i+1; y < battery_count; y++) {
-                        if (batteries[y].value > second) {
-                            second = batteries[y].value;
-                        }
+        [[nodiscard]] uint64_t get_max_joltage(const size_t active_battery_count) const {
+            const auto find_highest_digit = [&](const uint8_t start_position, const uint8_t end_position) -> Battery {
+                Battery best{0, start_position};
+                for (uint8_t i = start_position; i <= end_position; i++) {
+                    if (batteries[i].value > best.value) {
+                        best.value = batteries[i].value;
+                        best.index = i;
                     }
                 }
+                return best;
+            };
+
+            uint64_t joltage = 0;
+            uint8_t search_from = 0;
+
+            for (size_t i = 0; i < active_battery_count; i++) {
+                // Leave room for remaining digits after this one
+                uint8_t remaining_digits = active_battery_count - i - 1;
+                uint8_t search_until = battery_count - 1 - remaining_digits;
+
+                Battery found = find_highest_digit(search_from, search_until);
+                joltage = joltage * 10 + found.value;
+                search_from = found.index + 1;
             }
-            const uint8_t max = (first*10)+second;
-            std::cout << static_cast<int>(max) << std::endl;
-            return max;
+
+            return joltage;
         }
 
         void print() const {
@@ -74,7 +83,8 @@ int main(int argc, char* argv[]) {
         std::cout << "Using supplied data file: " << argv[1] << std::endl;
         path = argv[1];
     }
-    uint64_t joltage = 0;
+    uint64_t joltage_one = 0;
+    uint64_t joltage_two = 0;
     auto stats = fast_io::read_lines(path, [&](const char* line, size_t len) {
         Escalator::Bank bank;
         if (len < 2) return;
@@ -82,7 +92,8 @@ int main(int argc, char* argv[]) {
             bank.add_battery(line[i] - '0'); //damn ascii numbers! fix.
         }
         bank.print();
-        joltage += bank.get_max_joltage();
+        joltage_one += bank.get_max_joltage(2);
+        joltage_two += bank.get_max_joltage(12);
     },DEBUG_FAST_IO);
 
     if (!stats) {
@@ -90,6 +101,7 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    std::cout << joltage << std::endl;
+    std::cout << joltage_one << std::endl;
+    std::cout << joltage_two << std::endl;
     return 0;
 }
