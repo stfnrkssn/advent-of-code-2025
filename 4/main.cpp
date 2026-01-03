@@ -106,7 +106,7 @@ int main(int argc, char* argv[]) {
     unsigned int movable_count = 0;
     for (size_t i = 0; i < grid.size(); i++) {
         if (!grid[i])
-            continue; //count only for cells with roll in it.
+            continue; //count only for cells with a roll in it.
 
         uint8_t neighbor_count = 0;
         Grid::for_each_neighbor(def,static_cast<Grid::GridIndex>(i),[&](const Grid::GridIndex index) {
@@ -117,6 +117,32 @@ int main(int argc, char* argv[]) {
             movable_count++;
     }
 
-    std::cout << movable_count << std::endl;
+    std::cout << movable_count << std::endl; //Part 1.
+
+    unsigned int removed_count = movable_count;
+    movable_count = 0;
+
+    while (removed_count > 0) {
+        removed_count = 0;
+        for (size_t i = 0; i < grid.size(); i++) {
+            if (!grid[i])
+                continue;
+
+            uint8_t neighbor_count = 0;
+            Grid::for_each_neighbor(def, static_cast<Grid::GridIndex>(i), [&](const Grid::GridIndex index) {
+                if (grid[index] == true)
+                    neighbor_count++;
+            });
+
+            if (neighbor_count < 4) {
+                removed_count++;
+                grid[i] = false; //remove the roll.
+            }
+        }
+        movable_count += removed_count;
+    }
+
+    std::cout << movable_count << std::endl; //Part 2
+
     return 0;
 }
