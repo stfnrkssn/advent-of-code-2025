@@ -216,8 +216,9 @@ std::optional<ReadStats> read_csv(const char* path, TokenParser&& parser, bool d
 }
 
 // Convenience: parse integers with optional prefix char
-inline int parse_int(const char* start, size_t len) {
-    int value = 0;
+template<typename IntType = int>
+inline IntType parse_int(const char* start, size_t len) {
+    IntType value = 0;
     for (size_t i = 0; i < len; ++i) {
         char c = start[i];
         if (c >= '0' && c <= '9') {
