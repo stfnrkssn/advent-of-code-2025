@@ -76,9 +76,6 @@ int main(int argc, char* argv[]) {
         path = argv[1];
     }
 
-
-
-    //actually add to the fresh_ids map instead of using a range data structure - suspicious of part 2 coming up...
     std::vector<Inventory::IdRange> fresh_ids;
     fresh_ids.reserve(8096); //no idea about the size of the input data, but should be enough to avoid reallocation
     std::vector<Inventory::IdType> ids;
